@@ -2,48 +2,72 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  // Organization Profile
+  orgName: z.string().min(2, "Organization name must be at least 2 characters"),
+  website: z.string().url("Please enter a valid URL"),
+  mission: z.string().min(10, "Mission statement must be at least 10 characters"),
+  location: z.string().min(2, "Location must be at least 2 characters"),
+  sector: z.string().min(2, "Sector must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  
+  // Grant Details
+  grantTitle: z.string().min(2, "Grant title must be at least 2 characters"),
+  fundingAmount: z.string().min(1, "Please enter funding amount"),
+  purpose: z.string().min(10, "Purpose must be at least 10 characters"),
+  projectDescription: z.string().min(50, "Project description must be at least 50 characters"),
+  expectedOutcomes: z.string().min(50, "Expected outcomes must be at least 50 characters"),
+  timeline: z.string().min(10, "Timeline must be at least 10 characters"),
+  evaluationPlan: z.string().min(50, "Evaluation plan must be at least 50 characters"),
+});
 
 const Index = () => {
-  const [orgName, setOrgName] = useState("");
-  const [orgDescription, setOrgDescription] = useState("");
-  const [grantTopic, setGrantTopic] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState("");
   const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      orgName: "",
+      website: "",
+      mission: "",
+      location: "",
+      sector: "",
+      email: "",
+      phone: "",
+      grantTitle: "",
+      fundingAmount: "",
+      purpose: "",
+      projectDescription: "",
+      expectedOutcomes: "",
+      timeline: "",
+      evaluationPlan: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orgName || !orgDescription || !grantTopic) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all fields before generating suggestions.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
       // Simulate API call to Azure OpenAI
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      setResult(
-        `Based on your input for ${orgName}, here are some suggestions for your grant proposal on ${grantTopic}:\n\n` +
-        "1. Focus on demonstrating clear impact metrics\n" +
-        "2. Highlight your organization's unique approach\n" +
-        "3. Include specific timeline and milestones\n" +
-        "4. Detail the sustainability of your proposed project"
-      );
+      
       toast({
         title: "Success!",
-        description: "Grant writing suggestions generated successfully.",
+        description: "Your grant proposal has been generated successfully.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to generate suggestions. Please try again.",
+        description: "Failed to generate grant proposal. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -53,67 +77,242 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-gray-800">Grant Writing Assistant</h1>
-          <p className="text-gray-600">Get AI-powered suggestions for your grant proposal</p>
+          <p className="text-gray-600">Complete the form below to generate your grant proposal</p>
         </div>
 
-        <Card className="p-6 shadow-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Organization Name</label>
-              <Input
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Enter your organization's name"
-                className="w-full"
-              />
-            </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization Profile</CardTitle>
+                <CardDescription>Enter your organization's details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="orgName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Organization Description</label>
-              <Textarea
-                value={orgDescription}
-                onChange={(e) => setOrgDescription(e.target.value)}
-                placeholder="Briefly describe your organization's mission and work"
-                className="w-full min-h-[100px]"
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="url" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Grant Topic</label>
-              <Input
-                value={grantTopic}
-                onChange={(e) => setGrantTopic(e.target.value)}
-                placeholder="What is the focus of your grant proposal?"
-                className="w-full"
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="mission"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mission Statement</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location/Headquarters</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="sector"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sector/Field of Operation</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Grant Details</CardTitle>
+                <CardDescription>Provide information about the grant you're applying for</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="grantTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Grant Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fundingAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Funding Amount Requested</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="purpose"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purpose/Objective</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="projectDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="expectedOutcomes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expected Outcomes/Impact</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="timeline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Timeline</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="evaluationPlan"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Evaluation Plan</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Suggestions...
+                  Generating Proposal...
                 </>
               ) : (
-                "Generate Suggestions"
+                "Generate Grant Proposal"
               )}
             </Button>
           </form>
-        </Card>
-
-        {result && (
-          <Card className="p-6 shadow-lg bg-white">
-            <h2 className="text-xl font-semibold mb-4">AI Suggestions</h2>
-            <div className="whitespace-pre-wrap text-gray-700">{result}</div>
-          </Card>
-        )}
+        </Form>
       </div>
     </div>
   );
